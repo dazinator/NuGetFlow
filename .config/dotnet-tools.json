@@ -1,15 +1,9 @@
 {
   "version": 1,
   "isRoot": true,
-  "tools": {
-    "dotnet-format": {
-      "version": "5.0.211103",
-      "commands": [
-        "dotnet-format"
-      ]
-    },
+  "tools": {   
     "gitversion.tool": {
-      "version": "5.10.3",
+      "version": "5.11.1",
       "commands": [
         "dotnet-gitversion"
       ]
