@@ -83,9 +83,19 @@ jobs:
     - name: Test
       run: dotnet test src -c Release --no-build --no-restore --verbosity normal
 
-    - name: Pack
-      run: dotnet pack src -c Release --no-build --no-restore -p:PackageVersion=${{ env.GitVersion_SemVer }} --verbosity normal
+    # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry
+    - name: Configure nuget
+      run: dotnet nuget add source --username dazinator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/dazinator/index.json"
+    
+    - name: Pack nuget
+      run: dotnet pack src --no-build --no-restore --configuration Release /p:PackageVersion=${{ env.GitVersion_SemVer }}
 
-    - name: Publish
-      if: startsWith(github.ref, 'refs/heads/master') || startsWith(github.ref, 'refs/heads/develop')
-      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+    - name: Push nuget
+      run: dotnet nuget push "src/**/*.nupkg" -s github
+
+    # - name: Pack
+    #   run: dotnet pack src -c Release --no-build --no-restore -p:PackageVersion=${{ env.GitVersion_SemVer }} --verbosity normal
+
+    # - name: Publish
+    #   if: startsWith(github.ref, 'refs/heads/master') || startsWith(github.ref, 'refs/heads/develop')
+    #   run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
