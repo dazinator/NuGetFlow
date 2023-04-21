@@ -1,10 +1,14 @@
-name: .NET
+name: 'Build Source Branch'
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches:
+      - 'master'
+      - 'develop'
+      - 'feature/*'
+      - 'release/*'        
+#  pull_request:
+#    branches: [ master, develop ]
 
 jobs:
   dotnet-format:
@@ -18,8 +22,8 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 6.0.x
+#        with:
+#          dotnet-version: 3.1.x
 
       - name: Restore dotnet tools
         run: dotnet tool restore
@@ -31,18 +35,22 @@ jobs:
         id: changes
         uses: UnicornGlobal/has-changes-action@v1.0.11
 
+      - name: Configure git safe dir
+        run: |
+          git config --local --add safe.directory /github/workspace         
       - name: Commit files
         if: steps.changes.outputs.changed == 1
-        run: |
+        run: |         
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -a -m 'Automated dotnet-format update
-
           Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
       
       - name: Push changes
+        if: steps.changes.outputs.changed == 1
         #if: steps.command.outputs.command-name && steps.command.outputs.command-arguments == 'format' && steps.format.outputs.has-changes == 'true'
-        uses: ad-m/github-push-action@v0.6.0
+        uses: ad-m/github-push-action@master
+        #ad-m/github-push-action@v0.5.0
         with:
           branch: ${{ github.ref }}         
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,14 +61,12 @@ jobs:
       GitVersion.SemVer:
     steps:    
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
+      uses: actions/setup-dotnet@v1      
 
     - name: Restore dotnet tools
       run: dotnet tool restore 
@@ -75,13 +81,11 @@ jobs:
       run: dotnet build src --no-restore --configuration Release /p:Version=${{ env.GitVersion_SemVer }}
 
     - name: Test
-      run: dotnet test src -c Release --no-build --verbosity normal
-    
-    - name: Configure nuget
-      run: dotnet nuget add source --username dazinator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/dazinator/index.json"
-    
-    - name: Pack nuget
-      run: dotnet pack src --no-build --configuration Release /p:PackageVersion=${{ env.GitVersion_SemVer }}
+      run: dotnet test src -c Release --no-build --no-restore --verbosity normal
 
-    - name: Push nuget
-      run: dotnet nuget push "src/**/*.nupkg" -s github
+    - name: Pack
+      run: dotnet pack src -c Release --no-build --no-restore -p:PackageVersion=${{ env.GitVersion_SemVer }} --verbosity normal
+
+    - name: Publish
+      if: startsWith(github.ref, 'refs/heads/master') || startsWith(github.ref, 'refs/heads/develop')
+      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
