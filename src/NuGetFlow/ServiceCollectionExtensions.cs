@@ -1,6 +1,6 @@
 namespace Microsoft.Extensions.DependencyInjection;
 using Dazinator.Extensions.Options.ItemChanged;
-using Microsoft.Extensions.DependencyInjection;
+using NuGetFlow;
 using NuGetFlow.BackgroundTask;
 
 public static class ServiceCollectionExtensions
