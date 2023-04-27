@@ -16,8 +16,7 @@ public static class ServiceCollectionExtensions
             return new DefaultBackgroundTaskQueue(queueCapacity);
         });
 
-        services.AddOptionsChangedMonitor<NuGetPackageInstallerOptions>();
-        services.AddSingleton<NuGetPackageUpdaterHostedService>();
+        services.AddOptionsChangedMonitor<NuGetPackageInstallerOptions>();       
         services.AddSingleton<NuGetPackageInstaller>();
 
         return services;
