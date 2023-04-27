@@ -33,6 +33,25 @@ public class NuGetPackageInstaller
 
         // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
 
+        if(options == null)
+        {
+            _logger.LogWarning("Null options provided.");
+            return;
+        }
+
+        if(!options.Sources?.Any() ?? false)
+        {
+            _logger.LogWarning("No sources configured, packages will not be installed.");
+            // no sources configured.
+            return;
+        }
+
+        if(!options.Packages?.Any() ?? false)
+        {
+            _logger.LogInformation("No packages configured for installation.");
+            return;
+        }
+
         var sources = options.Sources.Select(a =>
         {
 
@@ -74,6 +93,7 @@ public class NuGetPackageInstaller
         var dependencyContext = DependencyContext.Default;
         var runtimePackageProvider = GetRuntimePackagesInfo(options.DotNetRuntimeVersion);
 
+      
         foreach (var ext in options.Packages)
         {
             var packageIdentity = await GetPackageIdentity(ext, sourceCacheContext, logger, repositories, cancellationToken);
