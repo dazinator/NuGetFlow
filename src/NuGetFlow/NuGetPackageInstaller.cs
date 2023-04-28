@@ -33,20 +33,20 @@ public class NuGetPackageInstaller
 
         // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
 
-        if(options == null)
+        if (options == null)
         {
             _logger.LogWarning("Null options provided.");
             return;
         }
 
-        if(!options.Sources?.Any() ?? false)
+        if (!options.Sources?.Any() ?? false)
         {
             _logger.LogWarning("No sources configured, packages will not be installed.");
             // no sources configured.
             return;
         }
 
-        if(!options.Packages?.Any() ?? false)
+        if (!options.Packages?.Any() ?? false)
         {
             _logger.LogInformation("No packages configured for installation.");
             return;
@@ -93,7 +93,7 @@ public class NuGetPackageInstaller
         var dependencyContext = DependencyContext.Default;
         var runtimePackageProvider = GetRuntimePackagesInfo(options.DotNetRuntimeVersion);
 
-      
+
         foreach (var ext in options.Packages)
         {
             var packageIdentity = await GetPackageIdentity(ext, sourceCacheContext, logger, repositories, cancellationToken);
@@ -112,8 +112,12 @@ public class NuGetPackageInstaller
         var packageDirectory = options.PackageDirectory;
         var nugetSettings = Settings.LoadDefaultSettings(packageDirectory);
 
-        await InstallPackages(sourceCacheContext, logger, packagesToInstall, packageDirectory, nugetSettings, cancellationToken);
-        await options.InvokeCallbackOnPackagesInstalledAsync(cancellationToken);
+        var newPackagesExtracted = await InstallPackages(sourceCacheContext, logger, packagesToInstall, packageDirectory, nugetSettings, cancellationToken);
+        if(newPackagesExtracted)
+        {
+            await options.InvokeCallbackOnPackagesInstalledAsync(cancellationToken);
+        }
+       
     }
 
     private IRuntimePackagesInfo GetRuntimePackagesInfo(string dotnetRuntimeVersion)
@@ -129,7 +133,7 @@ public class NuGetPackageInstaller
         }
     }
 
-    private async Task InstallPackages(SourceCacheContext sourceCacheContext, ILogger logger,
+    private async Task<bool> InstallPackages(SourceCacheContext sourceCacheContext, ILogger logger,
                                        IEnumerable<SourcePackageDependencyInfo> packagesToInstall, string rootPackagesDirectory,
                                        ISettings nugetSettings, CancellationToken cancellationToken)
     {
@@ -141,6 +145,8 @@ public class NuGetPackageInstaller
             logger);
 
         var globalPackagesFolder = SettingsUtility.GetGlobalPackagesFolder(nugetSettings);
+
+        bool any = false;
 
         foreach (var package in packagesToInstall)
         {
@@ -158,15 +164,23 @@ public class NuGetPackageInstaller
             _logger.LogDebug("{packageName} - {downloadStatus}", package, downloadResult.Status);
 
             // Extract the package into the target directory.
-            await PackageExtractor.ExtractPackageAsync(
-                downloadResult.PackageSource,
-                downloadResult.PackageStream,
-                packagePathResolver,
-                packageExtractionContext,
-                cancellationToken);
+            var results = await PackageExtractor.ExtractPackageAsync(
+                  downloadResult.PackageSource,
+                  downloadResult.PackageStream,
+                  packagePathResolver,
+                  packageExtractionContext,
+                  cancellationToken);
 
+
+            foreach (var item in results)
+            {
+                any = true;
+                _logger.LogDebug("extracted - {item}", item);
+            }
 
         }
+
+        return any;
     }
 
     private IEnumerable<SourcePackageDependencyInfo> GetPackagesToInstall(SourceRepositoryProvider sourceRepositoryProvider,
