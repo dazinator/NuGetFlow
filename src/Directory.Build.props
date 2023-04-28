@@ -1,15 +1,18 @@
 <Project>
- <PropertyGroup>
+  <PropertyGroup>
     <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
-    <IncludeSymbols>true</IncludeSymbols>   
+    <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
-   <DebugType>embedded</DebugType>
- </PropertyGroup>
+    <!-- Optional: Necessary when using nuget feeds that don't support snupkg symbols packages. The symboles will be embedded within the dll contained in the published nuget package inflating its size.
+   However the consumer of the package should see that symbols get loaded for this assembly without VS having to download a seperate symbols package (which as indicated - may not be obtainable if the published feed doesn't support these packages).
+   Nuget.org v3 seems to support snupkg's but GitHub feeds don't appear to.
+   If using nuget.org feeds you may which to comment this out, or consider not generating symbols packages when publishing to github feeds.-->
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
       <PrivateAssets>all</PrivateAssets>
@@ -17,4 +20,4 @@
     </PackageReference>
   </ItemGroup>
 </Project>
-   
+

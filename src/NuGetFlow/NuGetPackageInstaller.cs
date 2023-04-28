@@ -112,12 +112,27 @@ public class NuGetPackageInstaller
         var packageDirectory = options.PackageDirectory;
         var nugetSettings = Settings.LoadDefaultSettings(packageDirectory);
 
-        var newPackagesExtracted = await InstallPackages(sourceCacheContext, logger, packagesToInstall, packageDirectory, nugetSettings, cancellationToken);
-        if(newPackagesExtracted)
+        var newPackagesExtracted = await InstallPackages(sourceCacheContext, logger, packagesToInstall, packageDirectory, nugetSettings, skipPackage: (p) =>
+        {
+            // we assume if a directory exists then the package is good, we dont redownload.
+            // if there was a partial extraction this could cause problems, would have to manually delete the directory.
+            // however at the moment nuget isn't giving us a way to extract a package and get back only files that didn't already exist, so we have no easy way to
+            /// determing if any true modifications were made - nuget package extarctor will blindly overwrite the files every time, then return the list of all the files.
+            /// Where as we only want to raise a callback when there were new package contents extarcted. This is a cheap and dirty way to achieve this by assumign if the folder
+            /// exists then its immutable and we'll skip overwriting it again.
+            var packageName = $"{p.Id}.{p.Version.ToNormalizedString()}";
+            if (Directory.Exists(Path.Combine(packageDirectory, packageName)))
+            {
+                /// true means skip extracting this package.
+                return true;
+            }
+
+        }, cancellationToken);
+        if (newPackagesExtracted)
         {
             await options.InvokeCallbackOnPackagesInstalledAsync(cancellationToken);
         }
-       
+
     }
 
     private IRuntimePackagesInfo GetRuntimePackagesInfo(string dotnetRuntimeVersion)
@@ -135,7 +150,7 @@ public class NuGetPackageInstaller
 
     private async Task<bool> InstallPackages(SourceCacheContext sourceCacheContext, ILogger logger,
                                        IEnumerable<SourcePackageDependencyInfo> packagesToInstall, string rootPackagesDirectory,
-                                       ISettings nugetSettings, CancellationToken cancellationToken)
+                                       ISettings nugetSettings, Func<SourcePackageDependencyInfo, bool> skipPackage, CancellationToken cancellationToken)
     {
         var packagePathResolver = new PackagePathResolver(rootPackagesDirectory, true);
         var packageExtractionContext = new PackageExtractionContext(
@@ -150,7 +165,17 @@ public class NuGetPackageInstaller
 
         foreach (var package in packagesToInstall)
         {
+          
+            if (skipPackage?.Invoke(package) ?? false)
+            {
+                _logger.LogInformation("Skipping install of package {packageName}.", package);
+                continue;
+            }
+
             var downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
+
+            // check if folder extracted already and if so, don't re-download.
+
 
             // Download the package (might come from the shared package cache).
             _logger.LogInformation("Installing package {packageName}", package);
@@ -170,7 +195,6 @@ public class NuGetPackageInstaller
                   packagePathResolver,
                   packageExtractionContext,
                   cancellationToken);
-
 
             foreach (var item in results)
             {
