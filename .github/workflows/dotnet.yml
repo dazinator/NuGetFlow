@@ -88,7 +88,7 @@ jobs:
       run: dotnet nuget add source --username dazinator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/dazinator/index.json"
     
     - name: Pack nuget
-      run: dotnet pack src --no-build --no-restore --configuration Release /p:PackageVersion=${{ env.GitVersion_SemVer }}
+      run: dotnet pack src --no-build --no-restore --configuration Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg /p:PackageVersion=${{ env.GitVersion_SemVer }}
 
     - name: Push nuget
       run: dotnet nuget push "src/**/*.nupkg" -s github
