@@ -93,6 +93,9 @@ jobs:
     - name: Push nuget
       run: dotnet nuget push "src/**/*.nupkg" -s github
 
+    - name: Push snuget
+      run: dotnet nuget push "src/**/*.snupkg" -s github
+
     # - name: Pack
     #   run: dotnet pack src -c Release --no-build --no-restore -p:PackageVersion=${{ env.GitVersion_SemVer }} --verbosity normal
 
