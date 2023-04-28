@@ -126,6 +126,7 @@ public class NuGetPackageInstaller
                 /// true means skip extracting this package.
                 return true;
             }
+            return false;
 
         }, cancellationToken);
         if (newPackagesExtracted)
