@@ -62,8 +62,7 @@ public class NuGetPackageUpdaterHostedService : IHostedService
 
     private async ValueTask BuildWorkItemAsync(NuGetPackageInstallerOptions options, CancellationToken cancellationToken)
     {
-        // Simulate three 5-second tasks to complete
-        // for each enqueued work item
+   
         _logger.LogInformation("Nuget package installation is starting.");
         var baseDir = _environment.ContentRootPath;
         await _nugetPackageInstaller.InstallExtensionsAsync(options, baseDir, cancellationToken);

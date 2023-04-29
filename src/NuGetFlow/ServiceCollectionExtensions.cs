@@ -18,6 +18,10 @@ public static class ServiceCollectionExtensions
 
         services.AddOptionsChangedMonitor<NuGetPackageInstallerOptions>();       
         services.AddSingleton<NuGetPackageInstaller>();
+        services.AddSingleton<IPackageOptionsHashProvider, PackageOptionsHashProvider>();
+        services.AddSingleton<IPackageHashStore, PackageHashStore>();
+
+        
 
         return services;
 

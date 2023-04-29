@@ -1,6 +1,8 @@
 namespace NuGetFlow;
+
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Frameworks;
@@ -11,14 +13,23 @@ using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using NuGet.Versioning;
 using ILogger = NuGet.Common.ILogger;
-
 public class NuGetPackageInstaller
 {
     // private readonly IOptionsChangedMonitor<NuGetPackageInstallerOptions> _options;
     private const string _framework = "net6.0";
     private readonly ILogger<NuGetPackageInstaller> _logger;
+    private readonly IPackageOptionsHashProvider _hashProvider;
+    private readonly IPackageHashStore _hashStore;
 
-    public NuGetPackageInstaller(ILogger<NuGetPackageInstaller> logger) => _logger = logger;
+    public NuGetPackageInstaller(
+        ILogger<NuGetPackageInstaller> logger,
+        IPackageOptionsHashProvider hashProvider,
+        IPackageHashStore hashStore)
+    {
+        _logger = logger;
+        _hashProvider = hashProvider;
+        _hashStore = hashStore;
+    }
 
     /// <summary>
     /// Download and install nuget packages specified as per the options.
@@ -31,8 +42,16 @@ public class NuGetPackageInstaller
     public async Task InstallExtensionsAsync(NuGetPackageInstallerOptions options, string packageSourcesBasePath, CancellationToken cancellationToken)
     {
 
-        // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
+        // first compare current hash with persisted hash to work out if we actually have any changes - since last startup.
+        var currentHash = _hashProvider.ComputeHash(options);
+        var lastHash = await _hashStore.LoadHashAsync(options.PackageDirectory, cancellationToken);
+        if (IsHashEqual(currentHash, lastHash))
+        {
+            _logger.LogInformation("Skipping nuget install. Configuration has not changed since last install.");
+            return;
+        }
 
+        // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
         if (options == null)
         {
             _logger.LogWarning("Null options provided.");
@@ -136,6 +155,21 @@ public class NuGetPackageInstaller
 
     }
 
+    private bool IsHashEqual(byte[] currentHash, byte[] lastHash)
+    {
+        if (currentHash == null)
+        {
+            throw new ArgumentNullException(nameof(currentHash));
+        }
+
+        if (lastHash == null)
+        {
+            throw new ArgumentNullException(nameof(lastHash));
+        }
+
+        return currentHash.SequenceEqual(lastHash);
+    }
+
     private IRuntimePackagesInfo GetRuntimePackagesInfo(string dotnetRuntimeVersion)
     {
         switch (dotnetRuntimeVersion)
@@ -166,7 +200,7 @@ public class NuGetPackageInstaller
 
         foreach (var package in packagesToInstall)
         {
-          
+
             if (skipPackage?.Invoke(package) ?? false)
             {
                 _logger.LogInformation("Skipping install of package {packageName}.", package);
