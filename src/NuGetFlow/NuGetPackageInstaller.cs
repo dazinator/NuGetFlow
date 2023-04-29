@@ -18,17 +18,11 @@ public class NuGetPackageInstaller
     // private readonly IOptionsChangedMonitor<NuGetPackageInstallerOptions> _options;
     private const string _framework = "net6.0";
     private readonly ILogger<NuGetPackageInstaller> _logger;
-    private readonly IPackageOptionsHashProvider _hashProvider;
-    private readonly IPackageHashStore _hashStore;
 
     public NuGetPackageInstaller(
-        ILogger<NuGetPackageInstaller> logger,
-        IPackageOptionsHashProvider hashProvider,
-        IPackageHashStore hashStore)
+        ILogger<NuGetPackageInstaller> logger)
     {
         _logger = logger;
-        _hashProvider = hashProvider;
-        _hashStore = hashStore;
     }
 
     /// <summary>
@@ -42,14 +36,8 @@ public class NuGetPackageInstaller
     public async Task InstallExtensionsAsync(NuGetPackageInstallerOptions options, string packageSourcesBasePath, CancellationToken cancellationToken)
     {
 
-        // first compare current hash with persisted hash to work out if we actually have any changes - since last startup.
-        var currentHash = _hashProvider.ComputeHash(options);
-        var lastHash = await _hashStore.LoadHashAsync(options.PackageDirectory, cancellationToken);
-        if (IsHashEqual(currentHash, lastHash))
-        {
-            _logger.LogInformation("Skipping nuget install. Configuration has not changed since last install.");
-            return;
-        }
+       
+
 
         // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
         if (options == null)
@@ -153,22 +141,7 @@ public class NuGetPackageInstaller
             await options.InvokeCallbackOnPackagesInstalledAsync(cancellationToken);
         }
 
-    }
-
-    private bool IsHashEqual(byte[] currentHash, byte[] lastHash)
-    {
-        if (currentHash == null)
-        {
-            throw new ArgumentNullException(nameof(currentHash));
-        }
-
-        if (lastHash == null)
-        {
-            throw new ArgumentNullException(nameof(lastHash));
-        }
-
-        return currentHash.SequenceEqual(lastHash);
-    }
+    }  
 
     private IRuntimePackagesInfo GetRuntimePackagesInfo(string dotnetRuntimeVersion)
     {

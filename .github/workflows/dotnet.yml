@@ -74,6 +74,9 @@ jobs:
     - name: Determine Version
       run: dotnet gitversion /l console /output buildserver
 
+    - name: Configure nuget
+      run: dotnet nuget add source --username dazinator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/dazinator/index.json"
+    
     - name: Restore dependencies
       run: dotnet restore src
 
@@ -84,9 +87,7 @@ jobs:
       run: dotnet test src -c Release --no-build --no-restore --verbosity normal
 
     # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry
-    - name: Configure nuget
-      run: dotnet nuget add source --username dazinator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/dazinator/index.json"
-    
+
     - name: Pack nuget
       run: dotnet pack src --no-build --no-restore --configuration Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg /p:PackageVersion=${{ env.GitVersion_SemVer }}
 

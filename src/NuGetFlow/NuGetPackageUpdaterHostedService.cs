@@ -1,4 +1,5 @@
 namespace NuGetFlow;
+
 using Dazinator.Extensions.Options.ItemChanged;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,8 @@ using NuGetFlow.BackgroundTask;
 public class NuGetPackageUpdaterHostedService : IHostedService
 {
     private readonly IOptionsChangedMonitor<NuGetPackageInstallerOptions> _options;
+    private readonly IPackageOptionsHashProvider _hashProvider;
+    private readonly IPackageHashStore _hashStore;
     private readonly IHostEnvironment _environment;
     private readonly ILogger<NuGetPackageUpdaterHostedService> _logger;
     private readonly IBackgroundTaskQueue _taskQueue;
@@ -18,12 +21,16 @@ public class NuGetPackageUpdaterHostedService : IHostedService
 
     public NuGetPackageUpdaterHostedService(
         IOptionsChangedMonitor<NuGetPackageInstallerOptions> options,
+        IPackageOptionsHashProvider hashProvider,
+        IPackageHashStore hashStore,
         IHostEnvironment environment,
         ILogger<NuGetPackageUpdaterHostedService> logger,
         IBackgroundTaskQueue taskQueue,
         NuGetPackageInstaller nugetPackageInstaller)
     {
         _options = options;
+        _hashProvider = hashProvider;
+        _hashStore = hashStore;
         _environment = environment;
         _logger = logger;
         _taskQueue = taskQueue;
@@ -62,10 +69,37 @@ public class NuGetPackageUpdaterHostedService : IHostedService
 
     private async ValueTask BuildWorkItemAsync(NuGetPackageInstallerOptions options, CancellationToken cancellationToken)
     {
-   
+
+        // first compare current hash with persisted hash to work out if we actually have any changes - since last startup.
+        var currentHash = _hashProvider.ComputeHash(options);
+        var lastHash = await _hashStore.LoadHashAsync(options.PackageDirectory, cancellationToken);
+        if (IsHashEqual(currentHash, lastHash))
+        {
+            _logger.LogInformation("Skipping nuget install. Configuration has not changed since last install.");
+            return;
+        }
+
         _logger.LogInformation("Nuget package installation is starting.");
         var baseDir = _environment.ContentRootPath;
         await _nugetPackageInstaller.InstallExtensionsAsync(options, baseDir, cancellationToken);
         _logger.LogInformation("Nuget package installation has completed.");
+        await _hashStore.SaveHashAsync(options.PackageDirectory, currentHash, cancellationToken);
+        _logger.LogInformation("Hash persisted.");
+
+    }
+
+    private bool IsHashEqual(byte[] currentHash, byte[] lastHash)
+    {
+        if (currentHash == null)
+        {
+            throw new ArgumentNullException(nameof(currentHash));
+        }
+
+        if (lastHash == null)
+        {
+            throw new ArgumentNullException(nameof(lastHash));
+        }
+
+        return currentHash.SequenceEqual(lastHash);
     }
 }
