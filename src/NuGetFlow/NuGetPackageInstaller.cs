@@ -135,11 +135,7 @@ public class NuGetPackageInstaller
             }
             return false;
 
-        }, cancellationToken);
-        if (newPackagesExtracted)
-        {
-            await options.InvokeCallbackOnPackagesInstalledAsync(cancellationToken);
-        }
+        }, cancellationToken);      
 
     }  
 

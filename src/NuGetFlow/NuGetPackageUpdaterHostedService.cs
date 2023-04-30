@@ -85,6 +85,7 @@ public class NuGetPackageUpdaterHostedService : IHostedService
         _logger.LogInformation("Nuget package installation has completed.");
         await _hashStore.SaveHashAsync(options.PackageDirectory, currentHash, cancellationToken);
         _logger.LogInformation("Hash persisted.");
+        await options.InvokeCallbackOnOptionsChangedAsync(cancellationToken);     
 
     }
 

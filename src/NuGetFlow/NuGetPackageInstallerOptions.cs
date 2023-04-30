@@ -18,7 +18,7 @@ public class NuGetPackageInstallerOptions
 
     public void OnPackagesInstalledAsync(Func<CancellationToken, Task> asyncCallbackOnPackagesInstalled) => _asyncCallbackOnPackagesInstalled = asyncCallbackOnPackagesInstalled;
 
-    internal async Task InvokeCallbackOnPackagesInstalledAsync(CancellationToken cancellationToken)
+    internal async Task InvokeCallbackOnOptionsChangedAsync(CancellationToken cancellationToken)
     {
         if (_asyncCallbackOnPackagesInstalled != null)
         {
