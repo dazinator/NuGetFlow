@@ -7,21 +7,18 @@ using Microsoft.Extensions.Logging;
 public class NuGetPackagesOptionsInstallerService : INuGetPackagesOptionsInstallerService
 {
     private readonly IPackageOptionsHashProvider _hashProvider;
-    private readonly IPackageHashStore _hashStore;
-    private readonly IHostEnvironment _environment;
+    private readonly IPackageHashStore _hashStore;   
     private readonly ILogger<NuGetPackagesOptionsInstallerService> _logger;
     private readonly NuGetPackageInstaller _nugetPackageInstaller;
 
     public NuGetPackagesOptionsInstallerService(
-          IPackageOptionsHashProvider hashProvider,
-     IPackageHashStore hashStore,
-    IHostEnvironment environment,
+    IPackageOptionsHashProvider hashProvider,
+    IPackageHashStore hashStore,  
     ILogger<NuGetPackagesOptionsInstallerService> logger,
     NuGetPackageInstaller nugetPackageInstaller)
     {
         _hashProvider = hashProvider;
-        _hashStore = hashStore;
-        _environment = environment;
+        _hashStore = hashStore;      
         _logger = logger;
         _nugetPackageInstaller = nugetPackageInstaller;
     }
@@ -38,9 +35,8 @@ public class NuGetPackagesOptionsInstallerService : INuGetPackagesOptionsInstall
             return;
         }
 
-        _logger.LogInformation("Nuget package installation is starting.");
-        var baseDir = _environment.ContentRootPath;
-        await _nugetPackageInstaller.InstallExtensionsAsync(options, baseDir, cancellationToken);
+        _logger.LogInformation("Nuget package installation is starting.");      
+        await _nugetPackageInstaller.InstallExtensionsAsync(options, cancellationToken);
         _logger.LogInformation("Nuget package installation has completed.");
         await _hashStore.SaveHashAsync(options.PackageDirectory, currentHash, cancellationToken);
         _logger.LogInformation("Hash persisted.");

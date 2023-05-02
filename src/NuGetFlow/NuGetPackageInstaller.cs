@@ -33,10 +33,8 @@ public class NuGetPackageInstaller
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public async Task InstallExtensionsAsync(NuGetPackageInstallerOptions options, string packageSourcesBasePath, CancellationToken cancellationToken)
-    {
-
-       
+    public async Task InstallExtensionsAsync(NuGetPackageInstallerOptions options, CancellationToken cancellationToken)
+    {     
 
 
         // todo: https://martinbjorkstrom.com/posts/2018-09-19-revisiting-nuget-client-libraries
@@ -61,13 +59,7 @@ public class NuGetPackageInstaller
 
         var sources = options.Sources.Select(a =>
         {
-
-            var sourceUri = a.Source;
-            if (sourceUri.StartsWith('.'))
-            {
-                // convert relative path to full path
-                sourceUri = Path.Combine(packageSourcesBasePath, sourceUri);
-            }
+            var sourceUri = a.Source;            
             var source = new PackageSource(sourceUri);
             if (!string.IsNullOrWhiteSpace(a.Username) || !string.IsNullOrWhiteSpace(a.Password))
             {
