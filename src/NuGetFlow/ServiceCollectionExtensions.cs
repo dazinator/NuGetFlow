@@ -21,7 +21,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPackageOptionsHashProvider, PackageOptionsHashProvider>();
         services.AddSingleton<IPackageHashStore, PackageHashStore>();
 
+        services.AddSingleton<INuGetPackagesOptionsInstallerService, NuGetPackagesOptionsInstallerService>();
+
         
+
+
 
         return services;
 
