@@ -7,9 +7,8 @@ using NuGetFlow.BackgroundTask;
 public static class ServiceCollectionExtensions
 {
 
-    public static IServiceCollection AddNuGetPackageUpdater(this IServiceCollection services)
-    {
-      
+    public static IServiceCollection AddNuGetFlow(this IServiceCollection services)
+    {     
 
         services.AddOptionsChangedMonitor<NuGetPackageInstallerOptions>();
         services.AddSingleton<NuGetPackageInstaller>();
@@ -26,7 +25,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services"></param>
     /// <remarks>Depends on .AddNuGetPackageUpdater to be called still, to register core services. </remarks>
-    public static IServiceCollection AddNuGetPackageUpdaterHostedService(this IServiceCollection services)
+    public static IServiceCollection AddNuGetFlowEnsurePackagesHostedService(this IServiceCollection services)
     {
         services.AddHostedService<NuGetPackageUpdaterHostedService>();
         services.AddHostedService<QueuedHostedService>();
