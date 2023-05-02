@@ -10,7 +10,7 @@ public class NuGetPackageInstallerOptions
 
     public string PackageDirectory { get; set; } = Path.Combine(Environment.CurrentDirectory, ".extensions");
 
-    public List<PackageOptions> Packages { get; set; }
+    public List<PackageOptions> Packages { get; set; } = new List<PackageOptions>();
 
     public string DotNetRuntimeVersion { get; set; } = DotNetRuntimeVersions.SixZero;
 
