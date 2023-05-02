@@ -12,7 +12,6 @@ public partial class NuGetPackageUpdaterHostedService : IHostedService
 {
     private readonly INuGetPackagesOptionsInstallerService _installerService;
     private readonly IOptionsChangedMonitor<NuGetPackageInstallerOptions> _options;   
-    private readonly IHostEnvironment _environment;
     private readonly ILogger<NuGetPackageUpdaterHostedService> _logger;
     private readonly IBackgroundTaskQueue _taskQueue;  
     private IDisposable _optionsListeningSubscription;
@@ -20,13 +19,11 @@ public partial class NuGetPackageUpdaterHostedService : IHostedService
     public NuGetPackageUpdaterHostedService(
         INuGetPackagesOptionsInstallerService installerService,
         IOptionsChangedMonitor<NuGetPackageInstallerOptions> options,    
-        IHostEnvironment environment,
         ILogger<NuGetPackageUpdaterHostedService> logger,
         IBackgroundTaskQueue taskQueue)
     {
         _installerService = installerService;
         _options = options;    
-        _environment = environment;
         _logger = logger;
         _taskQueue = taskQueue;     
         _options = options;
